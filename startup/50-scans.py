@@ -1,3 +1,5 @@
+print(f"Loading {__file__!r} ...")
+
 # vim: sw=4 ts=4 sts expandtab smarttab
 # HXN step-scan configuration
 
@@ -55,7 +57,8 @@ dets_fs = [fs,zebra, sclr1, xspress3]
 dets6 = [zebra, sclr1, xspress3]
 dets2 = [fs,zebra, sclr1, merlin2, xspress3]
 #dets2 = [zebra, sclr1, xspress3, lakeshore2]
-dets3 = [zebra, sclr1, xspress3, merlin2]
+dets3 = [zebra, sclr1,xspress3]
+#dets3 = [zebra, sclr1,eiger1,xspress3]
 dets4 = [zebra, sclr1, merlin1, lakeshore2]
 dets7 = [fs, zebra, sclr1, xspress3]
 #dets5 = [zebra, sclr1, xspress3, dexela1]
@@ -66,8 +69,8 @@ dets8= [fs, zebra, sclr1]
 
 # define all the position names and save them to baseline
 # need to remove confict names
-conflict_name = ['pmllf', 
-                 'zplab', 
+conflict_name = ['pmllf',
+                 'zplab',
                  'pmllc']
 #descs = {d.name: set(d.describe())
 #         for d in bu.separate_devices
@@ -75,30 +78,50 @@ conflict_name = ['pmllf',
 
 # sd.baseline = [dcm, m1, m2, beamline_status, smll, vmll, hmll, ssa2, zp]
 # sd.baseline = [dcm, m1, m2, beamline_status, smll, vmll, hmll, ssa2, bpm1, bpm2, smlld]
-sd.baseline = [ugap,
-               e,
-               dcm, 
-               m1, 
-               m2, 
-               beamline_status, 
-               smll, 
-               vmll, 
-               hmll, 
+sd.baseline = [e,
+               dcm,
+               m1,
+               m2,
+               smll,
+               vmll,
+               hmll,
                ssa2,
                s5,
-               mllosa, 
-               zp, 
-               zps, 
-               zposa, 
-               zpbs, 
-               smlld, 
-               fdet1, 
-               diff, 
-               p, 
-               ps, 
+               mllosa,
+               zp,
+               zps,
+               zposa,
+               zpbs,
+               smlld,
+               fdet1,
+               diff,
+               p,
+               ps,
                pp,]
-
-
+'''
+sd.baseline = [ugap,
+               e,
+               dcm,
+               m1,
+               m2,
+               beamline_status,
+               smll,
+               vmll,
+               hmll,
+               ssa2,
+               s5,
+               mllosa,
+               zp,
+               zps,
+               zposa,
+               zpbs,
+               smlld,
+               fdet1,
+               diff,
+               p,
+               ps,
+               pp,]
+'''
 # The following is a temporary solution, which replaces fixed list of devices passed to 'BlueskyMagics.positioners' (deprecated).
 #   TODO: The proper way to label devices is to pass 'labels' to the device (Ophyd object) constructor. Use meaningful labels.
 dev_list_motor = [d for  d in bu.separate_devices(ophyd.utils.instances_from_namespace((ophyd.EpicsMotor,)))]
