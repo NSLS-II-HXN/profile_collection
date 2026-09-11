@@ -52,14 +52,23 @@ scan_steps = bpp.subs_decorator(bec)(hxntools.scans.scan_steps)
 
 #Please dont comment out dets 1-4 and dets_fs; it affects the GUI
 #dets1 = [zebra, sclr1, merlin1, xspress3]
-dets1 = [fs,zebra,sclr1,eiger1, xspress3]
+if not USE_RASMI:
+    dets1 = [fs,zebra,sclr1,eiger1, xspress3]
+else:
+    dets1 = [fs,zebra,sclr1, xspress3]
 dets_fs = [fs, zebra, sclr1, xspress3]
 #dets_fs = [fs,zebra, sclr1, xspress3]
 dets6 = [zebra, sclr1, xspress3]
-dets2 = [fs,zebra, sclr1, eiger1]
+if not USE_RASMI:
+    dets2 = [fs,zebra, sclr1, eiger1]
+else:
+    dets2 = [fs,zebra, sclr1]
 #dets2 = [zebra, sclr1, xspress3, lakeshore2]
 #dets3 = [zebra, sclr1,xspress3]
-dets3 = [fs,zebra,sclr1,merlin1,xspress3,eiger1]
+if not USE_RASMI:
+    dets3 = [fs,zebra,sclr1,merlin1,xspress3,eiger1]
+else:
+    dets3 = [fs,zebra,sclr1,merlin1,xspress3]
 dets4 = [fs,zebra, sclr1, merlin1, xspress3]
 dets7 = [fs, zebra, sclr1, xspress3]
 #dets5 = [zebra, sclr1, xspress3, dexela1]

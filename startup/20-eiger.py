@@ -243,6 +243,14 @@ class HxnEigerDetector(HxnModalTrigger, EigerDetector):
 #         cam.stage_sigs[cam.image_mode] = 0  # 'Multiple'
 #         cam.stage_sigs[cam.trigger_mode] = 3  # 'External Enable'
 
+if os.path.isfile('/data/users/startup_parameters/USE_RASMI'):
+    USE_RASMI = True
+else:
+    USE_RASMI = False
+if USE_RASMI:
+    print(f"RASMI used, skipping {__file__!r} ...")
+    import sys
+    sys.exit()
 
 eiger1 = HxnEigerDetector('XF:03IDC-ES{Det:Eiger1M}', name='eiger1',
                             image_name='eiger1',

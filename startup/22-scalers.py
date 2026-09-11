@@ -8,7 +8,11 @@ from hxntools.struck_scaler import (HxnTriggeringScaler, StruckScaler)
 sclr1 = HxnTriggeringScaler('XF:03IDC-ES{Sclr:1}', name='sclr1')
 # let the scans know which detectors sclr1 triggers:
 # sclr1.scan_type_triggers['step'] = [zebra, merlin1, xspress3]
-sclr1.scan_type_triggers['step'] = [zebra, xspress3, eiger1]
+if not USE_RASMI:
+    print(f"RASMI not used, skipping {__file__!r} ...")
+    sclr1.scan_type_triggers['step'] = [zebra, xspress3, eiger1]
+else:
+    sclr1.scan_type_triggers['step'] = [zebra, xspress3]
 sclr1.scan_type_triggers['fly'] = []
 
 

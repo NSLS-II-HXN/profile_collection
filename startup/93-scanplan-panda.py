@@ -55,11 +55,34 @@ class PCOMP(Device):
     width = Cpt(EpicsSignal, "WIDTH")
     step = Cpt(EpicsSignal, "STEP")
     pulses = Cpt(EpicsSignal, "PULSES")
+    enable = Cpt(EpicsSignal, "ENABLE")
+
+
+class SRGATE(Device):
+    enable = Cpt(EpicsSignal, "ENABLE")
+    #set = Cpt(EpicsSignal, "SET") # conflict with the Bluesky interface
+    rst = Cpt(EpicsSignal, "RST")
+    set_edge = Cpt(EpicsSignal, "SET_EDGE", string=True)
+    rst_edge = Cpt(EpicsSignal, "RST_EDGE", string=True)
+    when_disabled = Cpt(EpicsSignal, "WHEN_DISABLED", string=True)
+    force_set = Cpt(EpicsSignal, "FORCE_SET")
+    force_rst = Cpt(EpicsSignal, "FORCE_RST")
+    out = Cpt(EpicsSignal, "OUT")
 
 
 class PCAP(Device):
     arm = Cpt(EpicsSignal, "ARM")
     active = Cpt(EpicsSignal, "ACTIVE")
+
+
+class DIV(Device):
+    enable = Cpt(EpicsSignal, "ENABLE")
+    inp = Cpt(EpicsSignal, "INP")
+    divisor = Cpt(EpicsSignal, "DIVISOR")
+    first_pulse = Cpt(EpicsSignal, "FIRST_PULSE", string=True)
+    outd = Cpt(EpicsSignal, "OUTD")
+    outn = Cpt(EpicsSignal, "OUTN")
+    count = Cpt(EpicsSignalRO, "COUNT")
 
 
 class CLOCK(Device):
@@ -130,6 +153,14 @@ class PandA_Ophyd1(Device):
     pulse4 = Cpt(PULSE, "PULSE4:")
     positions = Cpt(POSITIONS, "POSITIONS:")
     bits = Cpt(BITS, "BITS:")
+    srgate1 = Cpt(SRGATE, "SRGATE1:")
+    srgate2 = Cpt(SRGATE, "SRGATE2:")
+    srgate3 = Cpt(SRGATE, "SRGATE3:")
+    srgate4 = Cpt(SRGATE, "SRGATE4:")
+    div1 = Cpt(DIV, "DIV1:")
+    div2 = Cpt(DIV, "DIV2:")
+    div3 = Cpt(DIV, "DIV3:")
+    div4 = Cpt(DIV, "DIV4:")
 
 
 panda1 = PandA_Ophyd1("XF03IDC-ES-PANDA-1:", name="panda1")

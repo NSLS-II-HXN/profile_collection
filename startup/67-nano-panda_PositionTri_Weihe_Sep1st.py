@@ -980,7 +980,7 @@ def timescan_pd(detectors, num, dwell, *,
 def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwell, *,
                       panda_flyer, xmotor, ymotor, dead_time = 0,
                       delta=None, shutter=False, align=False, plot=False,
-                      md=None, snake=False, verbose=False, wait_before_scan=None, position_supersample= 10):
+                      md=None, snake=False, verbose=True, wait_before_scan=None, position_supersample= 1):
     """Read IO from SIS3820.
     Zebra buffers x(t) points as a flyer.
     Xpress3 is our detector.
@@ -1071,8 +1071,8 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
                 # acquire_period = acquire_time + 0.0016392
 
             elif det_name == "eiger2" or det_name == "eiger3":
-                acquire_time = dwell - dead_time
-                acquire_period = dwell
+                acquire_time = dwell/3 - dead_time
+                acquire_period = dwell/3
             elif det_name == "eiger_mobile":
                 acquire_time = dwell - dead_time
                 acquire_period = dwell
@@ -1141,7 +1141,7 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
         # delta = t_acc * v  # distance the stage will travel in t_acc
         # # delta = np.amax((delta, MIN_DELTA))
         # delta = min(0.5, delta + 0.1)
-        delta = 1
+        delta = 3
     delta = delta * np.sign(ystop - ystart)
 
 
@@ -1295,7 +1295,7 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
             print(f'Direction = {direction}')
             print(f'Start = {start}')
             print(f'Stop  = {stop}')
-        v = (np.abs(scan_stop - scan_start) / num_total) / dwell  # compute "stage speed"
+        v = (np.abs(scan_stop - scan_start) / num_total) / dwell # compute "stage speed"
 
 
         def move_to_start_fly():
@@ -1304,6 +1304,8 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
             # print(f"Start moving to beginning of the row")
             row_mv_to_start = short_uid('row')
             yield from bps.checkpoint()
+            print("Sleeping in move_to_start_fly")
+            print("scan_start_1 ", scan_start-delta/2.0*v)
             yield from bps.abs_set(ymotor, scan_start-delta/2.0*v, group=wait_before_scan)
             # yield from bps.trigger_and_read([temp_nanoKB, motor])  ## Uncomment this
             # print(f"Finished moving to the beginning of the row")
@@ -1312,7 +1314,7 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
         if verbose:
             t_startfly = tic()
             toc(t_startfly, "TIMER (STEP) - STARTING TIMER")
-
+        #yield from mv(ymotor.velocity, v)
         yield from move_to_start_fly()
 
         if verbose:
@@ -1339,13 +1341,14 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
             toc(t_startfly, str='TIMER (STEP) - MOTOR POSITION IS CHECKED')
 
         # Set the scan speed
-        if verbose:
-            print(f"FORWARD SPEED FOR SCAN AXIS: {v} (num={num_total} dwell={dwell})")
-        if v<5:
+        # if verbose:
+        print(f"FORWARD SPEED FOR SCAN AXIS: {v} (num={num_total} dwell={dwell})")
+        if v<5.0:
+            print(f"The speed updated to {v}")
             yield from mv(ymotor.velocity, v)
         else:
             raise RuntimeError(f"Ymotor speed too fast, check your input")
-
+        print(f"Sleeping with v={v} and {ymotor.velocity}")
         if verbose:
             toc(t_startfly, str='TIMER (STEP) - FORWARD VELOCITY IS SET')
 
@@ -1380,16 +1383,21 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
             yield from abs_set(dpc.cam.num_images, num_total, wait=True)
             yield from abs_set(dpc.cam.wait_for_plugins, 'No', wait=True)
         if "eiger3" in dets_by_name:
-            # print(f"Configuring 'eiger3' ...")
+            print(f"Configuring 'eiger3' ...")
             dpc = dets_by_name["eiger3"]
-            yield from abs_set(dpc.cam.num_triggers, 1, wait=True)
-            yield from abs_set(dpc.cam.num_images, num_total, wait=True)
+            # print("num_total", num_total)
+            # yield from bps.sleep(10)
+            yield from abs_set(dpc.cam.num_triggers, num_total, wait=True)
+            print("num_triggers configured")
+            yield from abs_set(dpc.cam.num_images, 1, wait=True)
+            print("num_images configured")
             yield from abs_set(dpc.cam.wait_for_plugins, 'No', wait=True)
+            print("wait_for_plugins configured")
         if "eiger_mobile" in dets_by_name:
             # print(f"Configuring 'eiger_mobile' ...")
             dpc = dets_by_name["eiger_mobile"]
-            yield from abs_set(dpc.cam.num_triggers, 1, group=wait_before_scan)
-            yield from abs_set(dpc.cam.num_images, num_total, group=wait_before_scan)
+            yield from abs_set(dpc.cam.num_triggers, num_total, group=wait_before_scan)
+            yield from abs_set(dpc.cam.num_images, 1, group=wait_before_scan)
             yield from abs_set(dpc.cam.wait_for_plugins, 'No', group=wait_before_scan)
 
         ion = panda_flyer.sclr
@@ -1402,11 +1410,12 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
             toc(t_startfly, str='TIMER (STEP) - DETECTORS ARE CONFIGURED')
 
         def panda_kickoff():
+            print("panda is kicked off")
             # start_zebra, stop_zebra = xstart * 1000000, xstop * 1000000
             start_zebra, stop_zebra = scan_start, scan_stop
             yield from kickoff(panda_flyer,
                                 num=num_total*panda_flyer.position_supersample,
-                                wait=True)
+                                 wait=True)
         yield from panda_kickoff()
 
         # panda_h5_path = os.path.realpath(os.path.join(panda_flyer.panda.data.hdf_directory.get(),panda_flyer.panda.data.hdf_file_name.get()))
@@ -1419,14 +1428,15 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
         #     os.symlink(panda_h5_path,panda_h5_link)
         # except:
         #     pass
-
+        print("mark1")
         if verbose:
             toc(t_startfly, str='TIMER (STEP) - PANDA STARTED')
+        print("mark2")
 
         # arm SIS3820, note that there is a 1 sec delay in setting X
         # into motion so the first point *in each row* won't
         # normalize...
-        if ion:
+        if ion: #08/26/2026
             yield from abs_set(ion.erase_start, 1)
             if verbose:
                 toc(t_startfly, str='TIMER (STEP) - SCALAR STARTED')
@@ -1453,7 +1463,8 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
 
 
         # Start Scan!
-
+        #print(f"Sleeping before the scan with v = {v} and {ymotor.velocity}")
+        #yield from bps.sleep(5) #08/26/2026
         st = yield from abs_set(ymotor, scan_stop+delta/2.0*v,group=row_scan)
         if verbose:
             st.add_callback(lambda x: toc(t_startfly, str=f"  MOTOR  {datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')}"))
@@ -1463,7 +1474,10 @@ def scan_and_fly_2dpd(detectors, xcenter, xrange, xnum, ystart, ystop, ynum, dwe
             print(f'  triggering {d.name}')
             st = yield from bps.trigger(d)
             st.add_callback(lambda x: toc(t_startfly, str=f"  DETECTOR  {datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')}"))
-
+            #yield from bps.abs_set(panda2.srgate1.force_set, 1) #Weihe8/31: start the PandA trigger generator
+            
+            yield from bps.abs_set(panda2.srgate1.enable, "ONE")
+            yield from bps.abs_set(panda2.pcomp1.enable, "SRGATE1.OUT") #Weihe8/31: start the PandA trigger generator
         # st = yield from abs_set(xmotor, row_stop)
         # st.watch(print_watch)
 
@@ -1617,6 +1631,7 @@ def pt_fly2dcontpd(dets, motor1, scan_start1, scan_end1, num1, motor2, scan_star
 
             if fg_volt < 5 and fg_offset < 5 and fg_freq < 10:
                 yield from abs_set(pt_fg.func,"RAMP")
+                yield from abs_set(pt_fg.sym,"25") #Weihe 8/31
                 yield from abs_set(pt_fg.volt,f"{fg_volt:.{4}f}")
                 yield from abs_set(pt_fg.offset,f"{fg_offset:.{4}f}")
                 yield from abs_set(pt_fg.freq,f"{fg_freq:.{4}f}")
@@ -1644,7 +1659,17 @@ def pt_fly2dcontpd(dets, motor1, scan_start1, scan_end1, num1, motor2, scan_star
             # yield from bps.abs_set(panda2.pulse2.delay_units,'s')
             # yield from bps.abs_set(panda2.pulse2.pulses,1) 
             # # Weihe_7/31 PandA setting by program diabled, do it manually
-
+            step_size=(scan_end1-scan_start1)/num1 # calculate the step gap in the units of um
+            yield from bps.abs_set(panda2.pcomp1.pre_start, 0) #Weihe 8/31 pre_start ponit was set 100 nm (assum 0.1 nm per step) before the start point
+            yield from bps.abs_set(panda2.pcomp1.start, scan_start1*1E4) #Weihe 8/31 assuming that 0.1 nm per AquaB count
+            yield from bps.abs_set(panda2.pcomp1.step, step_size*1E4) #Weihe 8/31, use the value step_gap above
+            yield from bps.abs_set(panda2.pcomp1.width, 0.5*step_size*1E4) #Weihe 8/31, set the exposure time as half of the step_gap, this need to be optimized later
+            yield from bps.abs_set(panda2.pcomp1.pulses, num1+20) #Weihe 8/31, add 20 points redundance to accommodate the missing point, number can be optimized later
+            yield from bps.abs_set(panda2.div1.divisor, num1) #Weihe 8/31, define how many points per line
+            # yield from bps.abs_set(panda2.srgate1.force_rst, 1) #Weihe 8/31
+            yield from bps.abs_set(panda2.pcomp1.enable, 'ZERO') #Weihe 8/31
+            yield from bps.abs_set(panda2.srgate1.when_disabled, 1)
+            yield from bps.abs_set(panda2.srgate1.enable, 'ZERO')
             yield from bps.sleep(0.1) # Give pandABox time to respond 
 
 

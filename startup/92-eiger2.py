@@ -449,7 +449,13 @@ except Exception:
           end='\n\n')
     traceback.print_exc()
     print()
-
-dets_fast = [fs,eiger2,xspress3]
-dets_fast_merlin = [fs,xspress3,merlin1,eiger2]
-dets_fast_fs = [fs,xspress3]
+#eiger2 = None
+if not USE_RASMI:
+    dets_fast = [fs,eiger2,xspress3]
+    dets_fast_merlin = [fs,xspress3,merlin1,eiger2]
+    dets_fast_fs = [fs,xspress3]
+else:
+    dets_fast = [fs,xspress3]
+    dets_fast_merlin = [fs,xspress3,merlin1]
+    dets_fast_fs = [fs,xspress3]
+    
